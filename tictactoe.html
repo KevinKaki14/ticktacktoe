@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Tic Tac Toe 3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fondo:#0d1117;        /* grafito profundo */
+    --panel:#161b22;        /* panel */
+    --celda:#1f2733;        /* acero */
+    --celda-hover:#2a3444;
+    --borde:#2e3a4d;
+    --azul:#4da3ff;         /* jugador X */
+    --rojo:#ff5c47;         /* jugador O */
+    --ambar:#ffb020;        /* ganador */
+    --verde:#39d98a;        /* info */
+    --texto:#c9d4e3;
+  }
+  body { margin:0; background:var(--fondo); font-family:'Rajdhani',Helvetica,sans-serif;
+         background-image:radial-gradient(circle at 70% 10%, #14202e 0%, transparent 55%); }
+
+  #ventana {
+    position:relative; width:1040px; height:720px; margin:20px auto;
+    background:var(--panel); border:1px solid var(--borde); border-radius:12px;
+    box-shadow:0 12px 40px rgba(0,0,0,.6); overflow:hidden;
+  }
+  #barra {
+    height:38px; background:linear-gradient(90deg,#101722,#1a2536);
+    border-bottom:1px solid var(--borde);
+    font:600 16px 'Rajdhani'; letter-spacing:3px; color:var(--texto);
+    line-height:38px; padding-left:16px; text-transform:uppercase;
+  }
+  #barra span{ color:var(--azul); }
+  #cuerpo { position:relative; width:1040px; height:682px; }
+
+  button.celda {
+    width:62px; height:30px; font:600 15px 'Share Tech Mono',monospace;
+    background:var(--celda); border:1px solid var(--borde); border-radius:5px;
+    color:var(--azul); cursor:pointer; position:absolute;
+    transition:background .12s, transform .08s, box-shadow .12s;
+  }
+  button.celda:hover { background:var(--celda-hover); box-shadow:0 0 8px rgba(77,163,255,.25); }
+  button.celda:active { transform:scale(.94); }
+  button.celda:focus-visible { outline:2px solid var(--azul); }
+
+  button.exit {
+    position:absolute; top:8px; left:660px; width:80px; height:32px;
+    font:700 14px 'Rajdhani'; letter-spacing:2px; text-transform:uppercase;
+    background:transparent; color:var(--rojo); border:1px solid var(--rojo);
+    border-radius:6px; cursor:pointer; transition:all .15s;
+  }
+  button.exit:hover { background:var(--rojo); color:#0d1117; }
+
+  .lbl { position:absolute; font:600 20px 'Share Tech Mono',monospace; }
+  #msg   { left:20px; top:8px;   color:var(--ambar); letter-spacing:1px; }
+  #lblX  { left:20px; top:50px;  color:var(--verde); }
+  #lblY  { left:20px; top:100px; color:var(--verde); }
+  #lblZ  { left:20px; top:150px; color:var(--verde); }
+  #turno { left:500px; top:614px; color:var(--texto);
+           border:1px solid var(--borde); border-radius:8px; padding:6px 18px;
+           background:#10161f; }
+  #turno b { color:var(--azul); }
+  #turno.o b { color:var(--rojo); }
+
+  /* diálogo de confirmación estilo moderno */
+  #velo { position:absolute; inset:0; background:rgba(5,8,12,.65); display:none;
+          align-items:center; justify-content:center; backdrop-filter:blur(2px); }
+  #dialogo { background:var(--panel); border:1px solid var(--borde); border-radius:10px;
+             padding:28px 36px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.7); }
+  #dialogo p { margin:0 0 20px; font:600 20px 'Rajdhani'; color:var(--texto); letter-spacing:1px; }
+  #dialogo button { width:100px; height:36px; margin:0 8px; border-radius:6px; cursor:pointer;
+                    font:700 15px 'Rajdhani'; letter-spacing:1px; }
+  #btnSi { background:var(--azul); border:none; color:#0d1117; }
+  #btnNo { background:transparent; border:1px solid var(--rojo); color:var(--rojo); }
+  #btnNo:hover { background:var(--rojo); color:#0d1117; }
+</style>
+</head>
+<body>
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDXqZ_IzFKPJgZubqgcfCNvSz1tq0azM-w",
+    authDomain: "tictactoekaki.firebaseapp.com",
+    databaseURL: "https://tictactoekaki-default-rtdb.firebaseio.com",
+    projectId: "tictactoekaki",
+    storageBucket: "tictactoekaki.firebasestorage.app",
+    messagingSenderId: "804351121125",
+    appId: "1:804351121125:web:da136eb609c2b04091260c",
+    measurementId: "G-6NN80MW4P9"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+<div id="ventana">
+  <div id="barra">Tic Tac Toe <span>3D</span></div>
+  <div id="cuerpo">
+    <div id="rejilla"></div>
+    <button class="exit" onclick="seguir_o_finalizar()">Exit</button>
+    <div class="lbl" id="msg"></div>
+    <div class="lbl" id="lblX"></div>
+    <div class="lbl" id="lblY"></div>
+    <div class="lbl" id="lblZ"></div>
+    <div class="lbl" id="turno"></div>
+    <div id="velo">
+      <div id="dialogo">
+        <p>¿Quieres continuar?</p>
+        <button id="btnSi" onclick="respuesta(true)">Sí</button>
+        <button id="btnNo" onclick="respuesta(false)">No</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let jugadas, jugador, g, X, Y, Z;
+const botones = [];
+
+(function crearTablero(){
+  const cont = document.getElementById('rejilla');
+  const CW = 66, CH = 34;
+  for (let i=0;i<64;i++){
+    const b = document.createElement('button');
+    b.className = 'celda';
+    b.textContent = '\u00A0';
+    b.onclick = () => botonClick(i);
+    botones.push(b);
+    cont.appendChild(b);
+  }
+  let contador = 0;
+  for (let z=3; z>=0; z--){
+    for (let y=0; y<4; y++){
+      for (let x=0; x<4; x++){
+        const row = y + z*4;
+        const col = x + (3-z)*4;
+        botones[contador].style.left = (col*CW) + 'px';
+        botones[contador].style.top  = (row*CH + 8) + 'px';
+        contador++;
+      }
+    }
+  }
+})();
+
+function setLbl(id, txt){ document.getElementById(id).textContent = txt; }
+
+function actualizarTurno(){
+  const t = document.getElementById('turno');
+  t.innerHTML = 'Jugador <b>' + (jugador+1) + '</b>';
+  t.classList.toggle('o', jugador===1);
+}
+
+function inicio(){
+  jugadas = Array.from({length:4},()=>Array.from({length:4},()=>[0,0,0,0]));
+  for (const b of botones){
+    b.textContent = '\u00A0';
+    b.style.color = 'var(--azul)';
+    b.style.background = '';
+    b.style.borderColor = '';
+    b.style.boxShadow = '';
+  }
+  X = Y = Z = jugador = g = 0;
+  setLbl('msg','');
+  setLbl('lblX',''); setLbl('lblY',''); setLbl('lblZ','');
+  actualizarTurno();
+}
+
+function seguir_o_finalizar(){
+  document.getElementById('velo').style.display = 'flex';
+}
+function respuesta(si){
+  document.getElementById('velo').style.display = 'none';
+  if (si){
+    if (g) inicio();
+  } else {
+    document.getElementById('ventana').remove();
+  }
+}
+
+function botonClick(i){
+  Z = Math.floor(i/16);
+  const yy = i%16;
+  Y = Math.floor(yy/4);
+  X = yy%4;
+  setLbl('lblX','X='+X);
+  setLbl('lblY','Y='+Y);
+  setLbl('lblZ','Z='+Z);
+  if (g){ seguir_o_finalizar(); return; }
+
+  if (!jugadas[Z][Y][X]){
+    setLbl('msg','');
+    let texto;
+    if (jugador===0){
+      texto='X'; jugadas[Z][Y][X]=-1;
+      botones[i].textContent='X'; botones[i].style.color='var(--azul)';
+    } else {
+      texto='O'; jugadas[Z][Y][X]=1;
+      botones[i].textContent='O'; botones[i].style.color='var(--rojo)';
+    }
+
+    const pinta = idx => {
+      const b=botones[idx];
+      b.textContent=texto;
+      b.style.color='#0d1117';
+      b.style.background='var(--ambar)';
+      b.style.borderColor='var(--ambar)';
+      b.style.boxShadow='0 0 14px rgba(255,176,32,.55)';
+    };
+
+    if (horizontal()){ ganador(); for(let x=0;x<4;x++) pinta(Z*16+Y*4+x); return; }
+    if (vertical()){   ganador(); for(let y=0;y<4;y++) pinta(Z*16+y*4+X); return; }
+    if (profundidad()){ganador(); for(let z=0;z<4;z++) pinta(z*16+Y*4+X); return; }
+    if (X===Y && diagonal_frontal1()){ ganador(); for(let x=0;x<4;x++) pinta(Z*16+x*4+x); return; }
+    if (X+Y===3 && diagonal_frontal2()){ ganador(); for(let x=0;x<4;x++) pinta(Z*16+(3-x)*4+x); return; }
+    if (X===Z && diagonal_horizontal1()){ ganador(); for(let x=0;x<4;x++) pinta(x*16+Y*4+x); return; }
+    if (X+Z===3 && diagonal_horizontal2()){ ganador(); for(let x=0;x<4;x++) pinta((3-x)*16+Y*4+x); return; }
+    if (Y===Z && diagonal_vertical1()){ ganador(); for(let y=0;y<4;y++) pinta(y*16+y*4+X); return; }
+    if (Y+Z===3 && diagonal_vertical2()){ ganador(); for(let y=0;y<4;y++) pinta((3-y)*16+y*4+X); return; }
+    if (X===Y && Y+Z===3 && diagonal_cruzada1()){ ganador(); for(let x=0;x<4;x++) pinta(x*16+(3-x)*4+(3-x)); return; }
+    if (Z===X && Y+Z===3 && diagonal_cruzada2()){ ganador(); for(let x=0;x<4;x++) pinta(x*16+(3-x)*4+x); return; }
+    if (Y===Z && X+Y===3 && diagonal_cruzada3()){ ganador(); for(let x=0;x<4;x++) pinta(x*16+x*4+(3-x)); return; }
+    if (Z===Y && Y===X && diagonal_cruzada4()){ ganador(); for(let x=0;x<4;x++) pinta(x*16+x*4+x); return; }
+
+    if (!g){
+      jugador = jugador ? 0 : 1;
+      actualizarTurno();
+    }
+  } else {
+    const m = document.getElementById('msg');
+    m.textContent = 'JUGADA INVÁLIDA';
+    m.style.color = 'var(--rojo)';
+  }
+}
+
+function ganador(){
+  const m = document.getElementById('msg');
+  m.textContent = 'JUGADOR '+(jugador+1)+' GANÓ';
+  m.style.color = 'var(--ambar)';
+  g = 1;
+}
+
+const fuera = s => !(s<4 && s>-4);
+function horizontal(){ let s=0; for(let x=0;x<4;x++) s+=jugadas[Z][Y][x]; return fuera(s); }
+function vertical(){   let s=0; for(let y=0;y<4;y++) s+=jugadas[Z][y][X]; return fuera(s); }
+function profundidad(){let s=0; for(let z=0;z<4;z++) s+=jugadas[z][Y][X]; return fuera(s); }
+function diagonal_frontal1(){ let s=0; for(let x=0;x<4;x++) s+=jugadas[Z][x][x]; return fuera(s); }
+function diagonal_frontal2(){ let s=0; for(let y=0;y<4;y++) s+=jugadas[Z][y][3-y]; return fuera(s); }
+function diagonal_horizontal1(){ let s=0; for(let z=0;z<4;z++) s+=jugadas[z][Y][z]; return fuera(s); }
+function diagonal_horizontal2(){ let s=0; for(let z=0;z<4;z++) s+=jugadas[3-z][Y][z]; return fuera(s); }
+function diagonal_vertical1(){ let s=0; for(let z=0;z<4;z++) s+=jugadas[z][z][X]; return fuera(s); }
+function diagonal_vertical2(){ let s=0; for(let z=0;z<4;z++) s+=jugadas[3-z][z][X]; return fuera(s); }
+function diagonal_cruzada1(){ let s=0; for(let x=0;x<4;x++) s+=jugadas[3-x][x][x]; return fuera(s); }
+function diagonal_cruzada2(){ let s=0; for(let x=0;x<4;x++) s+=jugadas[x][3-x][x]; return fuera(s); }
+function diagonal_cruzada3(){ let s=0; for(let y=0;y<4;y++) s+=jugadas[3-y][3-y][y]; return fuera(s); }
+function diagonal_cruzada4(){ let s=0; for(let z=0;z<4;z++) s+=jugadas[z][z][z]; return fuera(s); }
+
+inicio();
+</script>
+</body>
+</html>
